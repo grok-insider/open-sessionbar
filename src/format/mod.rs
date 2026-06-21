@@ -163,8 +163,20 @@ mod tests {
         let s = busy_snap(None);
         let anim = Anim { mode: AnimateMode::Glyph, spinner: SpinnerStyle::Braille, tick: 0 };
         let t = bar_text(&s, anim);
-        assert!(t.starts_with("⠋ "), "got: {t}");
+        let frame0 = SpinnerStyle::Braille.frame(0);
+        assert!(t.starts_with(&format!("{frame0} ")), "got: {t}");
         assert!(t.ends_with("Working"));
+    }
+
+    #[test]
+    fn ring_frames_have_no_gap_at_top() {
+        // The top edge (tick 3 = both inner-top columns) must render the
+        // continuous-top comet, not the gapped 3-wide version.
+        let comet_top = SpinnerStyle::RingComet.frame(3);
+        assert_eq!(comet_top, "⠉⠉", "top edge should be continuous");
+        // ring + ring-comet are 2 braille cells wide
+        assert_eq!(SpinnerStyle::Ring.frame(0).chars().count(), 2);
+        assert_eq!(SpinnerStyle::RingComet.frame(0).chars().count(), 2);
     }
 
     #[test]

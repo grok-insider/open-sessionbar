@@ -7,7 +7,7 @@ stdout, no `interval`):
 
 ```jsonc
 "custom/sessionbar": {
-  "exec": "opensessions watch --format waybar --animate glyph --spinner shimmer",
+  "exec": "opensessions watch --format waybar --animate glyph --spinner ring-comet",
   "return-type": "json",
   "max-length": 40,
   "tooltip": true,
@@ -16,9 +16,16 @@ stdout, no `interval`):
 ```
 
 - `--animate glyph` prefixes a spinner frame to the text while a session is busy.
-- `--spinner shimmer` (amber dot gradient, like OpenCode's search) or `braille`
-  (`⠋⠙⠹…`).
+- `--spinner`:
+  - `ring-comet` — a 4-dot comet orbits a hollow "0" (recommended; most visible).
+  - `ring` — a single dot orbits the hollow "0".
+  - `braille` / `dots` — single-cell dot rotations.
+  - `shimmer` — filled cell with a rotating gap.
 - `--tick 100` sets the frame interval in ms (default 100).
+
+Note: a waybar text module has ONE color, so trailing comet dots cannot be
+greyed independently (braille glyphs are monochrome). The comet shape conveys
+the motion; per-dot dimming is only possible in the `opensessions tui` popup.
 
 ## Lightweight alternative — polling + CSS pulse
 

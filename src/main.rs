@@ -84,7 +84,7 @@ fn print_help() {
          OPTIONS:\n\
          \t--format F     bar output format (default: plain)\n\
          \t--animate M    off|glyph|pulse (default: off). glyph needs `watch`.\n\
-         \t--spinner S    braille|shimmer (default: braille; for --animate glyph)\n\
+         \t--spinner S    braille|shimmer|dots|ring|ring-comet (default: braille)\n\
          \t--tick MS      glyph frame interval under watch (default: {DEFAULT_TICK_MS})\n\
          \t--port N       plugin port (default: {DEFAULT_PORT}; env OPENCODE_SESSIONBAR_PORT)\n\
          \t--global|--project DIR   (plugin) install target",
