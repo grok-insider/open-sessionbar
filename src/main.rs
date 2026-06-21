@@ -224,6 +224,17 @@ fn cmd_watch(args: &[String]) -> ExitCode {
 
     // Render loop: re-emit on each snapshot, and (when animating a glyph and a
     // session is busy) on a frame timer so the spinner advances smoothly.
+    //
+    // CRITICAL: stdout is block-buffered when piped (waybar pipes the exec), so
+    // each line must be flushed immediately or waybar sees frames in bursts and
+    // the spinner looks frozen. We write + flush explicitly.
+    use std::io::Write;
+    let mut out = std::io::stdout();
+    let emit = |out: &mut std::io::Stdout, line: String| {
+        let _ = writeln!(out, "{line}");
+        let _ = out.flush();
+    };
+
     let mut last: Option<model::Snapshot> = None;
     let frame_dt = Duration::from_millis(tick_ms);
     loop {
@@ -233,12 +244,12 @@ fn cmd_watch(args: &[String]) -> ExitCode {
             Ok(snap) => {
                 last = snap;
                 anim.tick = 0;
-                println!("{}", format::render(fmt, last.as_ref(), anim));
+                emit(&mut out, format::render(fmt, last.as_ref(), anim));
             }
             Err(RecvTimeoutError::Timeout) => {
                 // Frame tick: advance the spinner and re-render the same snapshot.
                 anim.tick = anim.tick.wrapping_add(1);
-                println!("{}", format::render(fmt, last.as_ref(), anim));
+                emit(&mut out, format::render(fmt, last.as_ref(), anim));
             }
             Err(RecvTimeoutError::Disconnected) => return ExitCode::SUCCESS,
         }
