@@ -2,7 +2,12 @@
 import { test, expect } from "bun:test";
 import { buildSnapshot } from "../snapshot.ts";
 
-const makeApi = (sessions: unknown[], statusMap: Record<string, { type: string }>, perms: Record<string, unknown[]> = {}) =>
+const makeApi = (
+  sessions: unknown[],
+  statusMap: Record<string, { type: string }>,
+  perms: Record<string, unknown[]> = {},
+  messages: Record<string, unknown[]> = {},
+) =>
   ({
     client: {
       session: {
@@ -15,6 +20,7 @@ const makeApi = (sessions: unknown[], statusMap: Record<string, { type: string }
         permission: (id: string) => perms[id] ?? [],
         question: () => [],
         todo: () => [],
+        messages: (id: string) => messages[id] ?? [],
       },
     },
   }) as never;
@@ -62,4 +68,21 @@ test("busy headline when no waiting", async () => {
   );
   expect(snap.summary.headlineKind).toBe("busy");
   expect(snap.summary.headline).toBe("Working");
+});
+
+test("agent mode from latest assistant message", async () => {
+  const now = Date.now();
+  const messages = {
+    b: [
+      { role: "user" },
+      { role: "assistant", agent: "build", mode: "build" },
+      { role: "user" },
+      { role: "assistant", agent: "plan", mode: "plan" }, // latest wins
+    ],
+  };
+  const snap = await buildSnapshot(
+    makeApi([{ id: "b", title: "x", time: { updated: now } }], { b: { type: "busy" } }, {}, messages),
+  );
+  expect(snap.sessions[0]!.mode).toBe("plan");
+  expect(snap.summary.mode).toBe("plan"); // headline (top busy) mode
 });

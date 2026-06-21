@@ -101,6 +101,27 @@ export const buildSnapshot = async (api: TuiPluginApi): Promise<SessionSnapshot>
       /* ignore */
     }
 
+    // Agent/mode of the latest assistant message (build/plan/custom) — drives
+    // the OpenCode-matching color in consumers. Best-effort; older messages
+    // may lack the field.
+    let mode: string | undefined;
+    try {
+      const msgs = api.state.session.messages(id) as ReadonlyArray<{
+        role?: string;
+        agent?: string;
+        mode?: string;
+      }>;
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        const m = msgs[i]!;
+        if (m.role === "assistant") {
+          mode = m.agent ?? m.mode ?? undefined;
+          break;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
     const st = statusMap[id];
     let status: SessionBarStatus;
     let detail: string;
@@ -145,7 +166,7 @@ export const buildSnapshot = async (api: TuiPluginApi): Promise<SessionSnapshot>
       continue;
     }
 
-    const entry: SessionEntry = { id, title, status, detail, updated, ageLabel };
+    const entry: SessionEntry = { id, title, status, detail, updated, ageLabel, mode };
     entries.push(entry);
 
     if (status === "waiting" && perms.length > 0 && !topPermission) topPermission = entry;
@@ -173,7 +194,15 @@ export const buildSnapshot = async (api: TuiPluginApi): Promise<SessionSnapshot>
   }
 
   return {
-    summary: { total: entries.length, busy, waiting, idle: entries.length - busy - waiting, headline, headlineKind },
+    summary: {
+      total: entries.length,
+      busy,
+      waiting,
+      idle: entries.length - busy - waiting,
+      headline,
+      headlineKind,
+      mode: topBusy?.mode,
+    },
     sessions: entries,
     at: now,
   };

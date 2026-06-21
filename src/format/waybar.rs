@@ -1,16 +1,19 @@
 //! Waybar custom-module JSON: {"text","tooltip","class"}.
-//! Tooltip uses Pango markup (waybar renders it).
+//! Tooltip uses Pango markup (waybar renders it). `class` carries the headline
+//! kind + agent mode (build/plan) + optional `pulse`, so style.css can color by
+//! OpenCode mode and animate.
 
 use crate::model::Snapshot;
+use crate::spinner::Anim;
 
-pub fn render(snap: Option<&Snapshot>) -> String {
+pub fn render(snap: Option<&Snapshot>, anim: Anim) -> String {
     let snap = match snap {
         Some(s) if !s.is_empty() => s,
         _ => return json_line("", "", "empty"),
     };
 
-    let text = super::bar_text(snap);
-    let class = snap.summary.headline_kind.clone();
+    let text = super::bar_text(snap, anim);
+    let class = super::bar_classes(snap, anim);
 
     let waiting = snap.summary.waiting;
     let mut tip = format!("<b>SessionBar</b>  {} sessions", snap.summary.total);
@@ -18,11 +21,18 @@ pub fn render(snap: Option<&Snapshot>) -> String {
         tip.push_str(&format!("  ·  {waiting} waiting"));
     }
     for s in &snap.sessions {
+        let mode = s
+            .mode
+            .as_deref()
+            .filter(|m| !m.is_empty())
+            .map(|m| format!(" [{}]", pango_escape(m)))
+            .unwrap_or_default();
         tip.push('\n');
         tip.push_str(&format!(
-            "{} {}  <i>{}</i>  ({})",
+            "{} {}{}  <i>{}</i>  ({})",
             s.glyph(),
             pango_escape(&s.title),
+            mode,
             pango_escape(&s.detail),
             pango_escape(&s.age_label),
         ));

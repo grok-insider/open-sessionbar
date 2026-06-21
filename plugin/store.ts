@@ -22,6 +22,8 @@ export type SessionEntry = {
   updated: number;
   /** compact relative label, e.g. "5m", "waiting <1m" */
   ageLabel: string;
+  /** Agent of the latest assistant message: "build" | "plan" | custom name. */
+  mode?: string;
 };
 
 export type SessionSummary = {
@@ -31,6 +33,8 @@ export type SessionSummary = {
   idle: number;
   headline: string;
   headlineKind: HeadlineKind;
+  /** Agent/mode of the session driving the headline (the top busy one). */
+  mode?: string;
 };
 
 export type SessionSnapshot = {
