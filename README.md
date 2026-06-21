@@ -51,7 +51,8 @@ Options:
 - `--port N` / `OPENCODE_SESSIONBAR_PORT` (default 4098)
 - `--animate off\|glyph\|pulse` (default off). `glyph` animates the bar text
   (needs `watch`); `pulse` emits a CSS class to opacity-pulse (works with `bar`).
-- `--spinner braille\|shimmer` (default braille) — frame set for `glyph`.
+- `--spinner braille\|shimmer\|dots\|ring\|ring-comet` (default braille) — frame
+  set for `glyph`. `ring`/`ring-comet` orbit a dot around a hollow "0".
 - `--tick MS` (default 100) — glyph frame interval under `watch`.
 - `--global`/`--project DIR` (plugin install target).
 
