@@ -1,0 +1,11 @@
+/target
+**/*.rs.bk
+*.pdb
+
+# Nix build symlink
+/result
+/result-*
+
+# Plugin tooling
+plugin/node_modules
+plugin/bun.lock

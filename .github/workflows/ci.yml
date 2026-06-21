@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build (${{ matrix.system }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            system: x86_64-linux
+          - runner: ubuntu-24.04-arm
+            system: aarch64-linux
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      # Configures the 0xfell cache as a substituter AND pushes every newly
+      # built store path to it (using the CACHIX_AUTH_TOKEN secret). nix-community
+      # is pulled so build dependencies come from cache where possible.
+      - name: Set up Cachix
+        uses: cachix/cachix-action@v17
+        with:
+          name: 0xfell
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          extraPullNames: nix-community
+
+      - name: Build open-sessionbar
+        run: nix build .#packages.${{ matrix.system }}.default -L
+
+      - name: Flake check
+        run: nix flake check -L
+
+  plugin:
+    name: plugin (bun test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - name: Bun tests
+        working-directory: plugin
+        run: bun test
+
+  # Cross-compiled standalone binaries for non-Nix users (Linux + Windows),
+  # attached to the GitHub Release on v* tags.
+  release:
+    name: release (${{ matrix.target }})
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            ext: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            ext: ".exe"
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: Stage artifact
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp "target/${{ matrix.target }}/release/opensessions${{ matrix.ext }}" \
+             "dist/opensessions-${{ matrix.target }}${{ matrix.ext }}"
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/opensessions-${{ matrix.target }}${{ matrix.ext }}
