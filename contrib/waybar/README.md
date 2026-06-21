@@ -44,7 +44,13 @@ Classes: `permission`, `question`, `busy`, `idle`, `empty`, plus the agent mode
 theme (build `#034cff`, plan `#a753ae`):
 
 ```css
-@keyframes sessionbar-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+/* Note: GTK CSS keyframes do NOT accept comma-separated selectors like
+   "0%, 100%". Use separate from/50%/to blocks. */
+@keyframes sessionbar-pulse {
+  from { opacity: 1; }
+  50%  { opacity: 0.45; }
+  to   { opacity: 1; }
+}
 #custom-sessionbar.busy.pulse { animation: sessionbar-pulse 1.2s ease-in-out infinite; }
 
 /* Color the label (and the spinner glyph, which is part of the text) by mode */
