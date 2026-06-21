@@ -208,17 +208,37 @@ fn cmd_watch(args: &[String]) -> ExitCode {
 
     // Background thread keeps the SSE stream open (reconnecting), forwarding
     // each snapshot to the render loop via a channel.
+    //
+    // On a transient stream drop we do NOT blank the module — the bar keeps the
+    // last snapshot and the thread reconnects. Only after repeated failures (the
+    // plugin is really gone) do we emit an empty snapshot so a stale "Working"
+    // doesn't linger forever.
     let (tx, rx) = mpsc::channel::<Option<model::Snapshot>>();
     std::thread::spawn(move || {
         let client = Client::new(port);
+        let mut consecutive_failures: u32 = 0;
         loop {
             let tx2 = tx.clone();
-            let res = client.stream(move |snap| tx2.send(Some(snap)).is_ok());
-            if tx.send(None).is_err() {
-                return; // render loop gone
+            let res = client.stream(move |snap| {
+                // Each delivered snapshot resets the failure counter via a
+                // sentinel: we can't mutate from here, so deliver Some(snap).
+                tx2.send(Some(snap)).is_ok()
+            });
+            // Distinguish "connected then dropped" from "never connected".
+            match res {
+                Ok(()) => consecutive_failures = 0, // had a live stream; transient drop
+                Err(_) => consecutive_failures = consecutive_failures.saturating_add(1),
             }
-            let _ = res;
-            std::thread::sleep(Duration::from_secs(2));
+            // Only blank the bar once the plugin has been unreachable for a
+            // while (~3 failed connects ≈ 6s), so brief blips don't flicker.
+            if consecutive_failures >= 3 {
+                if tx.send(None).is_err() {
+                    return; // render loop gone
+                }
+            }
+            // Quick reconnect; back off slightly once clearly down.
+            let backoff = if consecutive_failures >= 3 { 5 } else { 1 };
+            std::thread::sleep(Duration::from_secs(backoff));
         }
     });
 

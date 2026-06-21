@@ -7,7 +7,7 @@ stdout, no `interval`):
 
 ```jsonc
 "custom/sessionbar": {
-  "exec": "opensessions watch --format waybar --animate glyph --spinner ring-comet",
+  "exec": "opensessions watch --format waybar --animate glyph --spinner braille",
   "return-type": "json",
   "max-length": 40,
   "tooltip": true,
@@ -17,11 +17,16 @@ stdout, no `interval`):
 
 - `--animate glyph` prefixes a spinner frame to the text while a session is busy.
 - `--spinner`:
-  - `ring-comet` — a 4-dot comet orbits a hollow "0" (recommended; most visible).
-  - `ring` — a single dot orbits the hollow "0".
-  - `braille` / `dots` — single-cell dot rotations.
+  - `braille` — single-cell 3-dot comet (recommended; **gapless**).
+  - `dots` — single-cell dot rotation.
   - `shimmer` — filled cell with a rotating gap.
+  - `ring` / `ring-comet` — a dot/comet orbits a hollow "0". Wider and more
+    "ring-like", but braille renders the two cells with a small seam, so there's
+    a slight gap at the top/bottom edges. Use `braille` if that bothers you.
 - `--tick 100` sets the frame interval in ms (default 100).
+
+The module never blanks on a brief plugin reconnect — `watch` keeps the last
+state and only clears after the plugin is unreachable for ~6s.
 
 Note: a waybar text module has ONE color, so trailing comet dots cannot be
 greyed independently (braille glyphs are monochrome). The comet shape conveys

@@ -56,8 +56,8 @@ def ring_comet_frames(trail=4):
 
 
 SPINNERS = {
-    # one dot orbiting a single 2x4 cell
-    "braille": ["⠈", "⠐", "⠠", "⢀", "⡀", "⠄", "⠂", "⠁"],
+    # single-cell 3-dot comet orbit — gapless (no inter-cell seam)
+    "braille": ["⠇", "⠋", "⠙", "⠸", "⢰", "⣠", "⣄", "⡆"],
     # filled cell with a rotating gap
     "shimmer": ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"],
     # 2-3 dot arc rotating
