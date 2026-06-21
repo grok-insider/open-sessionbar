@@ -40,6 +40,9 @@ pub struct Summary {
     pub headline: String,
     #[serde(default = "default_kind")]
     pub headline_kind: String,
+    /// Agent of the headline session: "build" | "plan" | custom. None if unknown.
+    #[serde(default)]
+    pub mode: Option<String>,
 }
 
 fn default_kind() -> String {
@@ -61,6 +64,9 @@ pub struct SessionEntry {
     pub updated: i64,
     #[serde(default)]
     pub age_label: String,
+    /// Agent of the latest assistant message: "build" | "plan" | custom.
+    #[serde(default)]
+    pub mode: Option<String>,
 }
 
 impl SessionEntry {

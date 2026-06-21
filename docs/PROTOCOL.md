@@ -36,12 +36,20 @@ Returns the current snapshot (poll this for a status bar):
       "status": "waiting",                 // waiting | busy | done | idle
       "detail": "Waiting for your permission · WebSearch",
       "updated": 1782025564412,            // epoch ms
-      "ageLabel": "waiting <1m"
+      "ageLabel": "waiting <1m",
+      "mode": "build"                       // agent of latest assistant msg
     }
   ],
   "at": 1782025574506                       // epoch ms snapshot was built
 }
 ```
+
+`summary.mode` is the agent of the session driving the headline (the top busy
+one). Each `session.mode` is the agent (`"build"`, `"plan"`, or a custom agent
+name) of that session's latest assistant message, read from
+`api.state.session.messages(id)`. Consumers map it to OpenCode's agent colors
+(dark theme: build `#034cff`, plan `#a753ae`). `mode` may be absent if no
+assistant message has run yet.
 
 Headline precedence: `permission > question > busy > idle/done`. Sub-sessions
 (forked children) are filtered out; stale idle/done sessions (older than 6h) are

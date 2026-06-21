@@ -42,13 +42,28 @@ per-bar setup, and [`contrib/`](contrib/) for copy-paste bar snippets.
 | Command | What |
 |---------|------|
 | `opensessions bar --format <F>` | one-shot status-bar line (`waybar`, `i3blocks`, `polybar`, `eww`, `plain`, `json`) |
-| `opensessions watch --format <F>` | stream (SSE) → one line per change |
+| `opensessions watch --format <F>` | stream (SSE) → one line per change (use for animated spinner) |
 | `opensessions tui` | live fullscreen popup |
 | `opensessions json` | raw snapshot JSON |
 | `opensessions plugin install\|update\|uninstall\|status` | manage the embedded OpenCode plugin |
 
-Options: `--port N` / `OPENCODE_SESSIONBAR_PORT` (default 4098),
-`--global`/`--project DIR` (plugin install target).
+Options:
+- `--port N` / `OPENCODE_SESSIONBAR_PORT` (default 4098)
+- `--animate off\|glyph\|pulse` (default off). `glyph` animates the bar text
+  (needs `watch`); `pulse` emits a CSS class to opacity-pulse (works with `bar`).
+- `--spinner braille\|shimmer` (default braille) — frame set for `glyph`.
+- `--tick MS` (default 100) — glyph frame interval under `watch`.
+- `--global`/`--project DIR` (plugin install target).
+
+### Animation & colors
+
+While a session is busy, the bar shows a "Working" headline. With
+`--animate glyph` it gets an OpenCode-style spinner (`shimmer` = amber dot
+gradient, `braille` = `⠋⠙⠹…`). The label (and spinner glyph) is colored by the
+session's **agent mode**, matching OpenCode's dark theme: **build = `#034cff`**
+(blue), **plan = `#a753ae`** (purple). Status-bar formats emit the mode as a CSS
+class (`busy build`/`busy plan`) and/or a resolved hex; see
+[`contrib/`](contrib/) for per-bar setup.
 
 ## How it works
 

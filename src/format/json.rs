@@ -13,10 +13,12 @@ pub fn render(snap: Option<&Snapshot>) -> String {
                 "idle": s.summary.idle,
                 "headline": s.summary.headline,
                 "headlineKind": s.summary.headline_kind,
+                "mode": s.summary.mode,
             },
             "sessions": s.sessions.iter().map(|e| serde_json::json!({
                 "id": e.id, "title": e.title, "status": e.status,
                 "detail": e.detail, "updated": e.updated, "ageLabel": e.age_label,
+                "mode": e.mode,
             })).collect::<Vec<_>>(),
             "at": s.at,
         })

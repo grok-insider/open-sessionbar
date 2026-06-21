@@ -39,12 +39,22 @@ if you add/remove plugin files.
 
 | File | Role |
 |------|------|
-| `model.rs` | serde snapshot types (camelCase rename) |
+| `model.rs` | serde snapshot types (camelCase rename), incl. `mode` (agent) |
 | `client.rs` | blocking HTTP `/sessions` + `/health`, SSE `/sessions/stream` reader |
-| `format/*.rs` | one formatter per bar (`waybar`, `i3blocks`, `polybar`, `eww`, `plain`, `json`) |
+| `spinner.rs` | animation settings (`Anim`): `--animate off\|glyph\|pulse`, `--spinner braille\|shimmer`, frame sets |
+| `format/*.rs` | one formatter per bar; `bar_classes` adds agent mode (`build`/`plan`) + `pulse`; `bar_text` prefixes the spinner glyph when busy |
 | `tui.rs` | ratatui live popup; SSE in a thread → channel → redraw |
 | `install.rs` | embedded plugin + `tui.json` patch (strict-JSON, `.bak`, JSONC-abort) |
-| `main.rs` | `std::env::args` dispatch (open-usage idiom, no clap) |
+| `main.rs` | `std::env::args` dispatch (open-usage idiom, no clap); `watch` frame ticker for `--animate glyph` |
+
+## Colors
+
+Agent/mode colors match OpenCode's dark theme
+(`packages/ui/src/styles/theme.css`): **build `#034cff`**, **plan `#a753ae`**
+(also ask `#2090f5`, docs `#fcb239`). The plugin reads each session's agent from
+the latest `AssistantMessage.agent` via `api.state.session.messages(id)`.
+Formatters surface it as a CSS class and/or resolved hex; coloring applies only
+while busy.
 
 ## Conventions
 
