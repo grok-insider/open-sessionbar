@@ -51,9 +51,10 @@ impl SpinnerStyle {
 
     pub fn frames(self) -> &'static [&'static str] {
         match self {
-            // Smooth single-dot orbit around the cell — each frame moves the lit
-            // dot one position clockwise, so it reads as one dot circling.
-            SpinnerStyle::Braille => &["⠈", "⠐", "⠠", "⢀", "⡀", "⠄", "⠂", "⠁"],
+            // Single-cell 3-dot comet orbiting clockwise — gapless (one braille
+            // cell has no inter-cell seam, unlike the 2-cell ring styles). Reads
+            // as a small spinning arc. This is the default: compact + no gap.
+            SpinnerStyle::Braille => &["⠇", "⠋", "⠙", "⠸", "⢰", "⣠", "⣄", "⡆"],
             // Full-cell rotation: the filled mass sweeps around the perimeter
             // (the classic smooth "loading" spinner).
             SpinnerStyle::Shimmer => &["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"],
