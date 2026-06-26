@@ -109,7 +109,37 @@ pub(crate) fn bar_classes(snap: &Snapshot, anim: Anim) -> String {
 /// CSS class names allow [A-Za-z0-9_-]; map anything else to '-'.
 fn sanitize_class(s: &str) -> String {
     s.chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect()
+}
+
+/// Multi-line tooltip body listing every session (plain text; bar-specific
+/// markup is applied by the caller).
+pub(crate) fn tooltip_lines(snap: &Snapshot) -> Vec<String> {
+    snap.sessions
+        .iter()
+        .map(|s| {
+            let mode = s
+                .mode
+                .as_deref()
+                .filter(|m| !m.is_empty())
+                .map(|m| format!(" [{m}]"))
+                .unwrap_or_default();
+            format!(
+                "{} {}{}  {}  ({})",
+                s.glyph(),
+                s.title,
+                mode,
+                s.detail,
+                s.age_label
+            )
+        })
         .collect()
 }
 
@@ -154,14 +184,21 @@ mod tests {
     #[test]
     fn classes_pulse_added_when_animating() {
         let s = busy_snap(Some("build"));
-        let anim = Anim { mode: AnimateMode::Pulse, ..Anim::default() };
+        let anim = Anim {
+            mode: AnimateMode::Pulse,
+            ..Anim::default()
+        };
         assert_eq!(bar_classes(&s, anim), "busy build pulse");
     }
 
     #[test]
     fn glyph_prefixes_text_when_busy() {
         let s = busy_snap(None);
-        let anim = Anim { mode: AnimateMode::Glyph, spinner: SpinnerStyle::Braille, tick: 0 };
+        let anim = Anim {
+            mode: AnimateMode::Glyph,
+            spinner: SpinnerStyle::Braille,
+            tick: 0,
+        };
         let t = bar_text(&s, anim);
         let frame0 = SpinnerStyle::Braille.frame(0);
         assert!(t.starts_with(&format!("{frame0} ")), "got: {t}");
@@ -182,8 +219,16 @@ mod tests {
     #[test]
     fn glyph_frame_advances_with_tick() {
         let s = busy_snap(None);
-        let a0 = Anim { mode: AnimateMode::Glyph, spinner: SpinnerStyle::Braille, tick: 0 };
-        let a1 = Anim { mode: AnimateMode::Glyph, spinner: SpinnerStyle::Braille, tick: 1 };
+        let a0 = Anim {
+            mode: AnimateMode::Glyph,
+            spinner: SpinnerStyle::Braille,
+            tick: 0,
+        };
+        let a1 = Anim {
+            mode: AnimateMode::Glyph,
+            spinner: SpinnerStyle::Braille,
+            tick: 1,
+        };
         assert_ne!(bar_text(&s, a0), bar_text(&s, a1));
     }
 
@@ -192,7 +237,11 @@ mod tests {
         let mut s = busy_snap(None);
         s.summary.headline_kind = "idle".into();
         s.summary.headline = "1 session".into();
-        let anim = Anim { mode: AnimateMode::Glyph, spinner: SpinnerStyle::Shimmer, tick: 3 };
+        let anim = Anim {
+            mode: AnimateMode::Glyph,
+            spinner: SpinnerStyle::Shimmer,
+            tick: 3,
+        };
         assert_eq!(bar_text(&s, anim), "1 session");
     }
 
@@ -204,21 +253,4 @@ mod tests {
         assert_eq!(v["class"], "busy plan");
         assert_eq!(v["text"], "Working");
     }
-}
-
-/// Multi-line tooltip body listing every session (plain text; bar-specific
-/// markup is applied by the caller).
-pub(crate) fn tooltip_lines(snap: &Snapshot) -> Vec<String> {
-    snap.sessions
-        .iter()
-        .map(|s| {
-            let mode = s
-                .mode
-                .as_deref()
-                .filter(|m| !m.is_empty())
-                .map(|m| format!(" [{m}]"))
-                .unwrap_or_default();
-            format!("{} {}{}  {}  ({})", s.glyph(), s.title, mode, s.detail, s.age_label)
-        })
-        .collect()
 }

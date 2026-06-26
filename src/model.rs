@@ -5,7 +5,7 @@
 
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct Snapshot {
     #[serde(default)]
     pub summary: Summary,
@@ -13,16 +13,6 @@ pub struct Snapshot {
     pub sessions: Vec<SessionEntry>,
     #[serde(default)]
     pub at: i64,
-}
-
-impl Default for Snapshot {
-    fn default() -> Self {
-        Snapshot {
-            summary: Summary::default(),
-            sessions: Vec::new(),
-            at: 0,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]

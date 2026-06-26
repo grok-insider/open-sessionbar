@@ -78,7 +78,10 @@ impl Client {
                 Ok(l) => l,
                 Err(_) => break, // connection dropped
             };
-            if let Some(payload) = line.strip_prefix("data: ").or_else(|| line.strip_prefix("data:")) {
+            if let Some(payload) = line
+                .strip_prefix("data: ")
+                .or_else(|| line.strip_prefix("data:"))
+            {
                 let payload = payload.trim_start();
                 if payload.is_empty() {
                     continue;
