@@ -9,3 +9,23 @@
 # Plugin tooling
 plugin/node_modules
 plugin/bun.lock
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*~
+*.bak
+*.tmp
+
+# Logs / runtime
+*.log
+nohup.out
+
+# Local env / secrets
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
