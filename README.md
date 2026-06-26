@@ -24,7 +24,7 @@ Two pieces, one repo:
 
 ```sh
 # 1. install the app (NixOS: flake module; else cargo / release binary)
-cargo install --git https://github.com/0xfell/open-sessionbar
+cargo install --git https://github.com/grok-insider/open-sessionbar
 
 # 2. install the OpenCode plugin (drops files + registers in tui.json)
 opensessions plugin install
@@ -92,4 +92,4 @@ nix build .# && nix flake check  # nix
 
 ## License
 
-MIT © 0xfell
+MIT © Grok Insider

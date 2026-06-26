@@ -15,7 +15,7 @@ You never touch npm. The app carries the plugin.
 
 `flake.nix`:
 ```nix
-inputs.open-sessionbar.url = "github:0xfell/open-sessionbar";
+inputs.open-sessionbar.url = "github:grok-insider/open-sessionbar";
 # pass it to home-manager via extraSpecialArgs = { inherit open-sessionbar; };
 ```
 
@@ -34,14 +34,14 @@ programs.open-sessionbar = {
 ### Other Linux / macOS
 
 ```sh
-cargo install --git https://github.com/0xfell/open-sessionbar
+cargo install --git https://github.com/grok-insider/open-sessionbar
 # or grab a prebuilt binary from the GitHub Releases page
 ```
 
 ### Windows
 
 Download `opensessions-x86_64-pc-windows-msvc.exe` from Releases, or
-`cargo install --git https://github.com/0xfell/open-sessionbar`.
+`cargo install --git https://github.com/grok-insider/open-sessionbar`.
 
 ---
 
