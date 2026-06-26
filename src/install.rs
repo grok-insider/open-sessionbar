@@ -70,8 +70,7 @@ fn write_plugin_files(t: &Target) -> Result<(), String> {
         let path = dir.join(name);
         fs::write(&path, body).map_err(|e| format!("write {}: {e}", path.display()))?;
     }
-    fs::write(dir.join(STAMP_FILE), VERSION)
-        .map_err(|e| format!("write version stamp: {e}"))?;
+    fs::write(dir.join(STAMP_FILE), VERSION).map_err(|e| format!("write version stamp: {e}"))?;
     Ok(())
 }
 
@@ -123,7 +122,8 @@ fn register_in_tui_json(t: &Target) -> Result<bool, String> {
 
     arr.push(serde_json::Value::String(PLUGIN_SPEC.to_string()));
     let pretty = serde_json::to_string_pretty(&root).map_err(|e| e.to_string())?;
-    fs::write(&path, format!("{pretty}\n")).map_err(|e| format!("write {}: {e}", path.display()))?;
+    fs::write(&path, format!("{pretty}\n"))
+        .map_err(|e| format!("write {}: {e}", path.display()))?;
     Ok(true)
 }
 
@@ -199,7 +199,8 @@ fn looks_like_jsonc(s: &str) -> bool {
             }
         } else if c == b'"' {
             in_str = true;
-        } else if c == b'/' && i + 1 < bytes.len() && (bytes[i + 1] == b'/' || bytes[i + 1] == b'*') {
+        } else if c == b'/' && i + 1 < bytes.len() && (bytes[i + 1] == b'/' || bytes[i + 1] == b'*')
+        {
             return true;
         }
         i += 1;
@@ -213,9 +214,7 @@ fn resolve_target(args: &[String]) -> Result<Target, String> {
         match args[i].as_str() {
             "--global" | "-g" => return global_target(),
             "--project" => {
-                let dir = args
-                    .get(i + 1)
-                    .ok_or("--project requires a directory")?;
+                let dir = args.get(i + 1).ok_or("--project requires a directory")?;
                 return Ok(project_target(Path::new(dir)));
             }
             _ => {}
@@ -264,7 +263,10 @@ fn update(args: &[String]) -> Result<(), String> {
     write_plugin_files(&t)?;
     // Ensure registration too, in case tui.json was reset.
     let added = register_in_tui_json(&t)?;
-    println!("plugin updated to v{VERSION} at {}", t.plugins_dir().display());
+    println!(
+        "plugin updated to v{VERSION} at {}",
+        t.plugins_dir().display()
+    );
     if added {
         println!("re-registered in {}", t.tui_json().display());
     }
@@ -329,6 +331,9 @@ fn status(args: &[String]) -> Result<(), String> {
         .filter(|p| *p > 0)
         .unwrap_or(4098);
     let live = crate::client::Client::new(port).healthy();
-    println!("server     : {} (127.0.0.1:{port})", if live { "live" } else { "not running" });
+    println!(
+        "server     : {} (127.0.0.1:{port})",
+        if live { "live" } else { "not running" }
+    );
     Ok(())
 }
