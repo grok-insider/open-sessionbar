@@ -106,6 +106,18 @@ pub(crate) fn bar_classes(snap: &Snapshot, anim: Anim) -> String {
     classes.join(" ")
 }
 
+/// OpenCode agent colors (dark theme, from packages/ui/src/styles/theme.css):
+/// build `#034cff`, plan `#a753ae`. Single source of truth shared by the
+/// hex-emitting formatters (i3blocks, polybar, eww, tmux). Returns `None` for an
+/// unknown/custom agent so consumers fall back to their default foreground.
+pub(crate) fn mode_hex(mode: Option<&str>) -> Option<&'static str> {
+    match mode {
+        Some("build") => Some("#034cff"),
+        Some("plan") => Some("#a753ae"),
+        _ => None,
+    }
+}
+
 /// CSS class names allow [A-Za-z0-9_-]; map anything else to '-'.
 fn sanitize_class(s: &str) -> String {
     s.chars()

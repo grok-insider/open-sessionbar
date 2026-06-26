@@ -29,16 +29,7 @@ pub fn render(snap: Option<&Snapshot>, anim: Anim) -> String {
         "waiting": snap.summary.waiting,
         "busy": snap.summary.busy,
         "mode": mode,
-        "color": if super::is_busy(snap) { mode_hex(mode) } else { None },
+        "color": if super::is_busy(snap) { super::mode_hex(mode) } else { None },
     })
     .to_string()
-}
-
-/// OpenCode agent colors (dark theme): build #034cff, plan #a753ae.
-fn mode_hex(mode: Option<&str>) -> Option<&'static str> {
-    match mode {
-        Some("build") => Some("#034cff"),
-        Some("plan") => Some("#a753ae"),
-        _ => None,
-    }
 }
