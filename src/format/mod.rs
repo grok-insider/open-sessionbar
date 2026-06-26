@@ -9,6 +9,7 @@ mod i3blocks;
 mod json;
 mod plain;
 mod polybar;
+mod tmux;
 mod waybar;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,6 +18,7 @@ pub enum Format {
     I3blocks,
     Polybar,
     Eww,
+    Tmux,
     Plain,
     Json,
 }
@@ -28,6 +30,7 @@ impl Format {
             "i3blocks" => Some(Format::I3blocks),
             "polybar" => Some(Format::Polybar),
             "eww" => Some(Format::Eww),
+            "tmux" => Some(Format::Tmux),
             "plain" => Some(Format::Plain),
             "json" => Some(Format::Json),
             _ => None,
@@ -35,7 +38,9 @@ impl Format {
     }
 
     pub fn all() -> &'static [&'static str] {
-        &["waybar", "i3blocks", "polybar", "eww", "plain", "json"]
+        &[
+            "waybar", "i3blocks", "polybar", "eww", "tmux", "plain", "json",
+        ]
     }
 }
 
@@ -48,6 +53,7 @@ pub fn render(fmt: Format, snap: Option<&Snapshot>, anim: Anim) -> String {
         Format::I3blocks => i3blocks::render(snap, anim),
         Format::Polybar => polybar::render(snap, anim),
         Format::Eww => eww::render(snap, anim),
+        Format::Tmux => tmux::render(snap, anim),
         Format::Plain => plain::render(snap, anim),
         Format::Json => json::render(snap),
     }
@@ -264,5 +270,56 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert_eq!(v["class"], "busy plan");
         assert_eq!(v["text"], "Working");
+    }
+
+    #[test]
+    fn mode_hex_maps_known_agents_only() {
+        assert_eq!(mode_hex(Some("build")), Some("#034cff"));
+        assert_eq!(mode_hex(Some("plan")), Some("#a753ae"));
+        assert_eq!(mode_hex(Some("custom-agent")), None);
+        assert_eq!(mode_hex(None), None);
+    }
+
+    #[test]
+    fn tmux_wraps_busy_text_in_mode_color() {
+        let s = busy_snap(Some("build"));
+        let out = tmux::render(Some(&s), Anim::default());
+        assert_eq!(out, "#[fg=#034cff]Working#[default]");
+        let s = busy_snap(Some("plan"));
+        let out = tmux::render(Some(&s), Anim::default());
+        assert_eq!(out, "#[fg=#a753ae]Working#[default]");
+    }
+
+    #[test]
+    fn tmux_busy_unknown_mode_is_uncolored() {
+        let s = busy_snap(None);
+        assert_eq!(tmux::render(Some(&s), Anim::default()), "Working");
+    }
+
+    #[test]
+    fn tmux_doubles_literal_hash_in_text() {
+        // tmux treats '#' as a format/strftime expansion; the dynamic text must
+        // be escaped ('##') while the style tags we emit stay verbatim.
+        let mut s = busy_snap(Some("build"));
+        s.summary.headline = "Working #3".into();
+        let out = tmux::render(Some(&s), Anim::default());
+        assert_eq!(out, "#[fg=#034cff]Working ##3#[default]");
+    }
+
+    #[test]
+    fn tmux_permission_is_bold_white() {
+        let mut s = busy_snap(None);
+        s.summary.headline_kind = "permission".into();
+        s.summary.headline = "Waiting for your permission".into();
+        let out = tmux::render(Some(&s), Anim::default());
+        assert_eq!(
+            out,
+            "#[fg=#ffffff,bold]Waiting for your permission#[default]"
+        );
+    }
+
+    #[test]
+    fn tmux_empty_when_no_sessions() {
+        assert_eq!(tmux::render(None, Anim::default()), "");
     }
 }

@@ -51,6 +51,25 @@ fn json_unreachable_is_empty_snapshot() {
 }
 
 #[test]
+fn bar_unreachable_is_empty_tmux() {
+    // tmux renders nothing when the plugin is unreachable, so the status line
+    // segment simply collapses.
+    let out = Command::new(bin())
+        .args(["bar", "--format", "tmux", "--port", "6553"])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    assert_eq!(String::from_utf8_lossy(&out.stdout).trim(), "");
+}
+
+#[test]
+fn tmux_listed_in_help() {
+    let out = Command::new(bin()).arg("help").output().unwrap();
+    assert!(out.status.success());
+    assert!(String::from_utf8_lossy(&out.stdout).contains("tmux"));
+}
+
+#[test]
 fn bad_format_errors() {
     let out = Command::new(bin())
         .args(["bar", "--format", "nope"])

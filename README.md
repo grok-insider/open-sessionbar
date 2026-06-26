@@ -15,7 +15,8 @@ Two pieces, one repo:
 
 - **`opensessions`** — a single Rust binary. Talks to the plugin over localhost
   and renders your sessions for any status bar (waybar, i3blocks, polybar, eww,
-  or plain text) plus a live fullscreen TUI popup. Runs on Linux, macOS, Windows.
+  tmux, or plain text) plus a live fullscreen TUI popup. Runs on Linux, macOS,
+  Windows.
 - **`opencode-sessionbar`** — the OpenCode TUI plugin that serves session state
   over `127.0.0.1:4098` (HTTP + SSE). It's **embedded in the binary** — install
   it with `opensessions plugin install`. No npm.
@@ -41,7 +42,7 @@ per-bar setup, and [`contrib/`](contrib/) for copy-paste bar snippets.
 
 | Command | What |
 |---------|------|
-| `opensessions bar --format <F>` | one-shot status-bar line (`waybar`, `i3blocks`, `polybar`, `eww`, `plain`, `json`) |
+| `opensessions bar --format <F>` | one-shot status-bar line (`waybar`, `i3blocks`, `polybar`, `eww`, `tmux`, `plain`, `json`) |
 | `opensessions watch --format <F>` | stream (SSE) → one line per change (use for animated spinner) |
 | `opensessions tui` | live fullscreen popup |
 | `opensessions json` | raw snapshot JSON |
