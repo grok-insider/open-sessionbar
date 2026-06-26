@@ -79,6 +79,7 @@ type BunLike = {
   serve: (options: {
     hostname: string;
     port: number;
+    idleTimeout?: number;
     fetch: (req: Request) => Response | Promise<Response>;
   }) => { port: number; stop: (closeActive?: boolean) => void };
 };
@@ -94,6 +95,11 @@ const startWithBun = (
   const server = bun.serve({
     hostname: HOSTNAME,
     port,
+    // /sessions/stream is a long-lived SSE connection that only pings every
+    // SSE_PING_MS (25s). Bun's default idleTimeout (10s) would kill a quiet
+    // stream before the first ping, so disable it; the stream manages its own
+    // lifecycle via the ping interval + cancel/abort cleanup.
+    idleTimeout: 0,
     fetch: (req) => {
       const url = new URL(req.url);
       if (req.method !== "GET") return json(405, { ok: false, error: "GET only" });
