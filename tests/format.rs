@@ -45,7 +45,8 @@ fn json_unreachable_is_empty_snapshot() {
         .output()
         .unwrap();
     assert!(out.status.success());
-    let v: serde_json::Value = serde_json::from_str(String::from_utf8_lossy(&out.stdout).trim()).unwrap();
+    let v: serde_json::Value =
+        serde_json::from_str(String::from_utf8_lossy(&out.stdout).trim()).unwrap();
     assert_eq!(v["sessions"].as_array().unwrap().len(), 0);
 }
 

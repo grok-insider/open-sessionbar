@@ -7,8 +7,10 @@ use std::thread;
 use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::execute;
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph};
 
@@ -44,7 +46,10 @@ pub fn run(port: u16) -> Result<(), String> {
     result
 }
 
-fn ui_loop(term: &mut Terminal<CrosstermBackend<Stdout>>, rx: &Receiver<Msg>) -> Result<(), String> {
+fn ui_loop(
+    term: &mut Terminal<CrosstermBackend<Stdout>>,
+    rx: &Receiver<Msg>,
+) -> Result<(), String> {
     let mut snapshot: Option<Snapshot> = None;
     let mut connected = false;
 
@@ -69,7 +74,8 @@ fn ui_loop(term: &mut Terminal<CrosstermBackend<Stdout>>, rx: &Receiver<Msg>) ->
         if event::poll(Duration::from_millis(200)).map_err(|e| e.to_string())? {
             if let Event::Key(k) = event::read().map_err(|e| e.to_string())? {
                 let quit = matches!(k.code, KeyCode::Char('q') | KeyCode::Esc)
-                    || (k.code == KeyCode::Char('c') && k.modifiers.contains(KeyModifiers::CONTROL));
+                    || (k.code == KeyCode::Char('c')
+                        && k.modifiers.contains(KeyModifiers::CONTROL));
                 if quit {
                     return Ok(());
                 }
@@ -82,7 +88,11 @@ fn draw(f: &mut Frame, snap: Option<&Snapshot>, connected: bool) {
     let area = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(1), Constraint::Length(1)])
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Min(1),
+            Constraint::Length(1),
+        ])
         .split(area);
 
     // Header
@@ -99,7 +109,9 @@ fn draw(f: &mut Frame, snap: Option<&Snapshot>, connected: bool) {
         None => ("Connecting…".to_string(), "idle".to_string()),
     };
     let header_style = match kind.as_str() {
-        "permission" | "question" => Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+        "permission" | "question" => Style::default()
+            .fg(Color::White)
+            .add_modifier(Modifier::BOLD),
         "busy" => Style::default().fg(Color::White),
         _ => Style::default().fg(Color::Gray),
     };
@@ -114,7 +126,9 @@ fn draw(f: &mut Frame, snap: Option<&Snapshot>, connected: bool) {
             .iter()
             .map(|e| {
                 let glyph_style = match e.status.as_str() {
-                    "waiting" => Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                    "waiting" => Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
                     "busy" => Style::default().fg(Color::White),
                     "done" => Style::default().fg(Color::Green),
                     _ => Style::default().fg(Color::DarkGray),
@@ -126,7 +140,10 @@ fn draw(f: &mut Frame, snap: Option<&Snapshot>, connected: bool) {
                         format!("  {}  ", e.detail),
                         Style::default().fg(Color::DarkGray),
                     ),
-                    Span::styled(format!("({})", e.age_label), Style::default().fg(Color::DarkGray)),
+                    Span::styled(
+                        format!("({})", e.age_label),
+                        Style::default().fg(Color::DarkGray),
+                    ),
                 ]);
                 ListItem::new(line)
             })
@@ -141,9 +158,20 @@ fn draw(f: &mut Frame, snap: Option<&Snapshot>, connected: bool) {
     f.render_widget(list, chunks[1]);
 
     // Footer
-    let status = if connected { "● live" } else { "○ reconnecting…" };
+    let status = if connected {
+        "● live"
+    } else {
+        "○ reconnecting…"
+    };
     let footer = Paragraph::new(Line::from(vec![
-        Span::styled(status, Style::default().fg(if connected { Color::Green } else { Color::Yellow })),
+        Span::styled(
+            status,
+            Style::default().fg(if connected {
+                Color::Green
+            } else {
+                Color::Yellow
+            }),
+        ),
         Span::styled("   q/Esc quit", Style::default().fg(Color::DarkGray)),
     ]));
     f.render_widget(footer, chunks[2]);
