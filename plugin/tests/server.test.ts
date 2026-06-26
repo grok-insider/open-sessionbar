@@ -81,6 +81,40 @@ test("SSE subscriber cleaned up on connection abort", async () => {
   }
 });
 
+test("SSE stream survives past Bun's 10s default idleTimeout", async () => {
+  const port = freePort();
+  let snap = sample("before-idle");
+  const srv = await startSessionServer(port, () => snap);
+  const base = `http://127.0.0.1:${port}`;
+  try {
+    const res = await fetch(`${base}/sessions/stream`);
+    const reader = res.body!.getReader();
+    const dec = new TextDecoder();
+    const readFrame = async (): Promise<string> => {
+      let buf = "";
+      while (!buf.includes("\n\n")) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+      }
+      return buf;
+    };
+    await readFrame(); // primed frame
+    // Sit idle past the 10s default; without idleTimeout:0 Bun kills the stream.
+    await new Promise((r) => setTimeout(r, 11_000));
+    expect(srv.subscribers()).toBe(1);
+    snap = sample("after-idle");
+    srv.broadcast(snap);
+    const f = await readFrame();
+    const m = f.match(/data: (.*)/);
+    expect(m).toBeTruthy();
+    expect(JSON.parse(m![1]).summary.headline).toBe("after-idle");
+    await reader.cancel();
+  } finally {
+    srv.stop();
+  }
+}, 15_000);
+
 test("404 + 405", async () => {
   const port = freePort();
   const srv = await startSessionServer(port, () => EMPTY_SNAPSHOT);

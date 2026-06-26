@@ -45,5 +45,5 @@ opensessions plugin install
 
 ## Releases
 
-Tag `vX.Y.Z` on `master`. CI builds via Nix (pushes to `0xfell.cachix.org`),
+Tag `vX.Y.Z` on `master`. CI builds via Nix (pushes to `grok-insider.cachix.org`),
 runs `bun test`, and attaches Linux/Windows binaries to the GitHub Release.

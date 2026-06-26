@@ -78,8 +78,8 @@ nix build .# && nix flake check    # nix package
 Flake mirrors `open-usage`: `packages.default` (rustPlatform),
 `apps.default`, `homeManagerModules.default` (`programs.open-sessionbar`:
 `enable`, `package`, `port`, `opencodePlugin.enable`), `checks`, `devShells`,
-cachix `nixConfig` (`0xfell.cachix.org`). CI pushes to cachix + attaches release
-binaries (Linux/Windows) on `v*` tags. Published as `github:0xfell/open-sessionbar`.
+cachix `nixConfig` (`grok-insider.cachix.org`). CI pushes to cachix + attaches release
+binaries (Linux/Windows) on `v*` tags. Published as `github:grok-insider/open-sessionbar`.
 
 ## CONTRIBUTING
 
