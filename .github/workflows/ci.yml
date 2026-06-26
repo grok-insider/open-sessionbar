@@ -12,6 +12,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Fast, required gate: formatting, lints, and the Rust integration tests.
+  # Runs on every PR; the master-only nix/cachix build below is skipped on PRs.
+  rust:
+    name: fmt + clippy + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test --all
+
   build:
     name: build (${{ matrix.system }})
     runs-on: ${{ matrix.runner }}
@@ -73,6 +88,12 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            ext: ""
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            ext: ""
+          - os: macos-14
+            target: aarch64-apple-darwin
             ext: ""
           - os: windows-latest
             target: x86_64-pc-windows-msvc

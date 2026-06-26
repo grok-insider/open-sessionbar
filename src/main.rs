@@ -98,12 +98,16 @@ fn parse_anim(args: &[String]) -> Result<Anim, String> {
     while i < args.len() {
         match args[i].as_str() {
             "--animate" | "-a" => {
-                let v = args.get(i + 1).ok_or("--animate requires off|glyph|pulse")?;
+                let v = args
+                    .get(i + 1)
+                    .ok_or("--animate requires off|glyph|pulse")?;
                 anim.mode = AnimateMode::parse(v)
                     .ok_or_else(|| format!("unknown --animate '{v}' (off|glyph|pulse)"))?;
             }
             "--spinner" => {
-                let v = args.get(i + 1).ok_or("--spinner requires braille|shimmer")?;
+                let v = args
+                    .get(i + 1)
+                    .ok_or("--spinner requires braille|shimmer")?;
                 anim.spinner = SpinnerStyle::parse(v)
                     .ok_or_else(|| format!("unknown --spinner '{v}' (braille|shimmer)"))?;
             }
@@ -156,8 +160,12 @@ fn parse_format(args: &[String], default: Format) -> Result<Format, String> {
     while i < args.len() {
         if args[i] == "--format" || args[i] == "-f" {
             let name = args.get(i + 1).ok_or("--format requires a value")?;
-            return Format::parse(name)
-                .ok_or_else(|| format!("unknown format '{name}' (try: {})", Format::all().join(", ")));
+            return Format::parse(name).ok_or_else(|| {
+                format!(
+                    "unknown format '{name}' (try: {})",
+                    Format::all().join(", ")
+                )
+            });
         }
         i += 1;
     }
@@ -231,10 +239,8 @@ fn cmd_watch(args: &[String]) -> ExitCode {
             }
             // Only blank the bar once the plugin has been unreachable for a
             // while (~3 failed connects ≈ 6s), so brief blips don't flicker.
-            if consecutive_failures >= 3 {
-                if tx.send(None).is_err() {
-                    return; // render loop gone
-                }
+            if consecutive_failures >= 3 && tx.send(None).is_err() {
+                return; // render loop gone
             }
             // Quick reconnect; back off slightly once clearly down.
             let backoff = if consecutive_failures >= 3 { 5 } else { 1 };
@@ -259,7 +265,11 @@ fn cmd_watch(args: &[String]) -> ExitCode {
     let frame_dt = Duration::from_millis(tick_ms);
     loop {
         let busy = last.as_ref().map(format::is_busy_opt).unwrap_or(false);
-        let timeout = if animate_glyph && busy { frame_dt } else { Duration::from_secs(3600) };
+        let timeout = if animate_glyph && busy {
+            frame_dt
+        } else {
+            Duration::from_secs(3600)
+        };
         match rx.recv_timeout(timeout) {
             Ok(snap) => {
                 last = snap;
@@ -288,6 +298,9 @@ fn cmd_tui(args: &[String]) -> ExitCode {
 
 fn cmd_json(args: &[String]) -> ExitCode {
     let snap = Client::new(parse_port(args)).snapshot();
-    println!("{}", format::render(Format::Json, snap.as_ref(), Anim::default()));
+    println!(
+        "{}",
+        format::render(Format::Json, snap.as_ref(), Anim::default())
+    );
     ExitCode::SUCCESS
 }
