@@ -4,6 +4,12 @@ All notable, user-facing changes to open-sessionbar are documented here. The
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1](https://github.com/grok-insider/open-sessionbar/compare/v0.2.0...v0.2.1) - 2026-06-27
+
+### Other
+
+- fix spinner/color docs, expand install, sync version drift ([#4](https://github.com/grok-insider/open-sessionbar/pull/4))
+
 ## 0.2.0
 
 - Added tmux status-line formatter with mode-colored Working label and proper escaping.
