@@ -4,11 +4,19 @@ All notable, user-facing changes to open-sessionbar are documented here. The
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.1](https://github.com/grok-insider/open-sessionbar/compare/v0.2.0...v0.2.1) - 2026-06-27
+## 0.2.1
 
-### Other
-
-- fix spinner/color docs, expand install, sync version drift ([#4](https://github.com/grok-insider/open-sessionbar/pull/4))
+- Added requirements: OpenCode >= 1.3.14 and a Nerd Font.
+- Added nix run, Home-Manager, and prebuilt install paths (with `--locked`).
+- Added default `bar` subcommand, `help`/`--version`, and the `plug` alias.
+- Added CSS classes for styling.
+- Added Troubleshooting and Uninstall sections to documentation.
+- Added badges to the README.
+- Added macOS prebuilt archives to the install documentation.
+- Changed spinner descriptions: braille is single-cell comet default, shimmer is full-cell rotation; documented dots, ring, ring-comet.
+- Changed color behavior: busy label/glyph are colored by agent mode (build #034cff, plan #a753ae), glyphs are monochrome.
+- Fixed version drift: flake.nix now reads version from Cargo.toml (was pinned 0.1.0); plugin/package.json updated from 0.1.0 to 0.2.0.
+- Fixed Windows artifact name in install docs (now `open-sessionbar-<ver>-x86_64-pc-windows-msvc.zip`).
 
 ## 0.2.0
 
