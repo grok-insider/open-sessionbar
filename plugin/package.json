@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "opencode-sessionbar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Serves live opencode session state (titles, status, waiting-for-permission) over localhost HTTP + SSE so a waybar module can render a SessionBar.",
   "private": true,
   "license": "MIT",

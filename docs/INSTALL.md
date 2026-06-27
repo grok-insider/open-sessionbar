@@ -34,14 +34,20 @@ programs.open-sessionbar = {
 ### Other Linux / macOS
 
 ```sh
-cargo install --git https://github.com/grok-insider/open-sessionbar
-# or grab a prebuilt binary from the GitHub Releases page
+cargo install --git https://github.com/grok-insider/open-sessionbar --locked
 ```
+
+Or grab a prebuilt archive from [Releases](https://github.com/grok-insider/open-sessionbar/releases)
+(each with a `.sha256`) and put `opensessions` on your `PATH`:
+
+- Linux: `open-sessionbar-<version>-x86_64-unknown-linux-musl.tar.gz` (or `aarch64-…`)
+- macOS: `open-sessionbar-<version>-x86_64-apple-darwin.tar.gz` (or `aarch64-…`)
 
 ### Windows
 
-Download `opensessions-x86_64-pc-windows-msvc.exe` from Releases, or
-`cargo install --git https://github.com/grok-insider/open-sessionbar`.
+Download `open-sessionbar-<version>-x86_64-pc-windows-msvc.zip` from
+[Releases](https://github.com/grok-insider/open-sessionbar/releases) (it contains
+`opensessions.exe`), or `cargo install --git https://github.com/grok-insider/open-sessionbar --locked`.
 
 ---
 
