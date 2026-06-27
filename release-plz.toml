@@ -1,0 +1,32 @@
+# release-plz — automated versioning + GitHub Releases for open-sessionbar.
+# Docs: https://release-plz.dev/docs/config
+#
+# Single crate. On each push to master, release-plz opens/updates a "release PR"
+# that bumps the version + Cargo.lock; an AI step (release.yml) rewrites the
+# CHANGELOG section. Merging the PR tags `vX.Y.Z` and creates the GitHub Release;
+# release.yml then attaches the prebuilt binaries. Nothing is published to
+# crates.io.
+
+[workspace]
+# Determine the current version from the `v*` git tag, not crates.io.
+git_only = true
+# Never run `cargo publish` (git_only alone doesn't always disable it).
+publish = false
+# Release the current version whenever it isn't tagged yet (robust; also lets a
+# direct version bump cut a release).
+release_always = true
+# Application binary, not a published library: skip cargo-semver-checks.
+semver_check = false
+# End-user app: treat `feat:` as a minor bump even on 0.x.
+features_always_increment_minor = true
+git_tag_name = "v{{ version }}"
+git_release_name = "v{{ version }}"
+
+# Preserve a curated changelog header (release-plz inserts new sections below).
+[changelog]
+header = """# Changelog
+
+All notable, user-facing changes to open-sessionbar are documented here. The
+format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this
+project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+"""
