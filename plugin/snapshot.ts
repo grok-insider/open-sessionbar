@@ -69,14 +69,8 @@ export const buildSnapshot = async (api: TuiPluginApi): Promise<SessionSnapshot>
 
   const now = Date.now();
   const entries: SessionEntry[] = [];
-  let busy = 0;
-  let waiting = 0;
-  let idle = 0;
-
-  // Highest-priority waiting session, for the headline.
-  let topPermission: SessionEntry | undefined;
-  let topQuestion: SessionEntry | undefined;
-  let topBusy: SessionEntry | undefined;
+  // Kind of waiting (permission vs question) for headline selection after sort.
+  const waitKind = new Map<string, "permission" | "question">();
 
   for (const s of sessions) {
     if (s.parentID) continue; // skip sub-sessions (forked children)
@@ -101,27 +95,6 @@ export const buildSnapshot = async (api: TuiPluginApi): Promise<SessionSnapshot>
       /* ignore */
     }
 
-    // Agent/mode of the latest assistant message (build/plan/custom) — drives
-    // the OpenCode-matching color in consumers. Best-effort; older messages
-    // may lack the field.
-    let mode: string | undefined;
-    try {
-      const msgs = api.state.session.messages(id) as ReadonlyArray<{
-        role?: string;
-        agent?: string;
-        mode?: string;
-      }>;
-      for (let i = msgs.length - 1; i >= 0; i--) {
-        const m = msgs[i]!;
-        if (m.role === "assistant") {
-          mode = m.agent ?? m.mode ?? undefined;
-          break;
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-
     const st = statusMap[id];
     let status: SessionBarStatus;
     let detail: string;
@@ -131,17 +104,16 @@ export const buildSnapshot = async (api: TuiPluginApi): Promise<SessionSnapshot>
       status = "waiting";
       detail = truncate(`Waiting for your permission · ${permissionLabel(perms[0]!)}`, DETAIL_MAX);
       ageLabel = `waiting ${timeAgo(updated, now)}`;
-      waiting++;
+      waitKind.set(id, "permission");
     } else if (questions.length > 0) {
       status = "waiting";
       detail = "Waiting for your answer";
       ageLabel = `waiting ${timeAgo(updated, now)}`;
-      waiting++;
+      waitKind.set(id, "question");
     } else if (st?.type === "busy" || st?.type === "retry") {
       status = "busy";
       detail = st.type === "retry" ? "Retrying…" : "Working…";
       ageLabel = timeAgo(updated, now);
-      busy++;
     } else {
       // Idle: distinguish "done" (had todos, all complete) from plain idle.
       let allDone = false;
@@ -154,40 +126,91 @@ export const buildSnapshot = async (api: TuiPluginApi): Promise<SessionSnapshot>
       status = allDone ? "done" : "idle";
       detail = allDone ? "Done" : "Idle";
       ageLabel = timeAgo(updated, now);
-      idle++;
     }
 
     const active = status === "waiting" || status === "busy";
-    // Stale idle/done sessions don't belong on the bar. Only idle/done reach
-    // here when stale (active sessions are always kept), and both increment the
-    // idle counter above, so roll that back.
+    // Stale idle/done sessions don't belong on the bar.
     if (!active && now - updated > STALE_MS) {
-      idle--;
       continue;
     }
 
-    const entry: SessionEntry = { id, title, status, detail, updated, ageLabel, mode };
-    entries.push(entry);
+    // Agent/mode of the latest assistant message — only for active sessions
+    // (drives OpenCode-matching color in consumers). Skip idle/done to avoid
+    // walking message history on every rebuild for sessions that won't color.
+    let mode: string | undefined;
+    if (active) {
+      try {
+        const msgs = api.state.session.messages(id) as ReadonlyArray<{
+          role?: string;
+          agent?: string;
+          mode?: string;
+        }>;
+        for (let i = msgs.length - 1; i >= 0; i--) {
+          const m = msgs[i]!;
+          if (m.role === "assistant") {
+            mode = m.agent ?? m.mode ?? undefined;
+            break;
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
 
-    if (status === "waiting" && perms.length > 0 && !topPermission) topPermission = entry;
-    else if (status === "waiting" && !topQuestion && !topPermission) topQuestion = entry;
-    else if (status === "busy" && !topBusy) topBusy = entry;
+    entries.push({ id, title, status, detail, updated, ageLabel, mode });
   }
 
-  entries.sort((a, b) => b.updated - a.updated);
+  // Prefer active sessions when capping; within each group sort by updated desc.
+  const rank = (s: SessionEntry): number =>
+    s.status === "waiting" ? 0 : s.status === "busy" ? 1 : 2;
+  entries.sort((a, b) => {
+    const ra = rank(a);
+    const rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    return b.updated - a.updated;
+  });
   if (entries.length > MAX_LISTED) entries.length = MAX_LISTED;
+
+  // Summary counts from the final listed set so total/busy/waiting/idle match
+  // sessions[] (no pre-cap drift).
+  let busy = 0;
+  let waiting = 0;
+  let idle = 0;
+  for (const e of entries) {
+    if (e.status === "busy") busy++;
+    else if (e.status === "waiting") waiting++;
+    else idle++;
+  }
+
+  // Headline drivers: most recently updated of each kind in the listed set.
+  let topPermission: SessionEntry | undefined;
+  let topQuestion: SessionEntry | undefined;
+  let topBusy: SessionEntry | undefined;
+  for (const e of entries) {
+    if (e.status === "waiting" && waitKind.get(e.id) === "permission") {
+      if (!topPermission || e.updated > topPermission.updated) topPermission = e;
+    } else if (e.status === "waiting" && waitKind.get(e.id) === "question") {
+      if (!topQuestion || e.updated > topQuestion.updated) topQuestion = e;
+    } else if (e.status === "busy") {
+      if (!topBusy || e.updated > topBusy.updated) topBusy = e;
+    }
+  }
 
   let headline = "";
   let headlineKind: HeadlineKind = "idle";
+  let headlineSession: SessionEntry | undefined;
   if (topPermission) {
     headline = "Waiting for your permission";
     headlineKind = "permission";
+    headlineSession = topPermission;
   } else if (topQuestion) {
     headline = "Waiting for your answer";
     headlineKind = "question";
+    headlineSession = topQuestion;
   } else if (topBusy) {
     headline = busy > 1 ? `Working · ${busy} sessions` : "Working";
     headlineKind = "busy";
+    headlineSession = topBusy;
   } else if (entries.length > 0) {
     headline = entries.length === 1 ? "1 session" : `${entries.length} sessions`;
     headlineKind = "idle";
@@ -198,10 +221,11 @@ export const buildSnapshot = async (api: TuiPluginApi): Promise<SessionSnapshot>
       total: entries.length,
       busy,
       waiting,
-      idle: entries.length - busy - waiting,
+      idle,
       headline,
       headlineKind,
-      mode: topBusy?.mode,
+      // Mode of the session driving the headline (if any).
+      mode: headlineSession?.mode,
     },
     sessions: entries,
     at: now,

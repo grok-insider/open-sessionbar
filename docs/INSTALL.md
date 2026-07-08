@@ -17,6 +17,9 @@ You never touch npm. The app carries the plugin.
 ```nix
 inputs.open-sessionbar.url = "github:grok-insider/open-sessionbar";
 # pass it to home-manager via extraSpecialArgs = { inherit open-sessionbar; };
+#
+# While hacking on a local checkout (uncommitted work never hits cachix):
+#   open-sessionbar.url = "git+file:///home/you/dev/opensource/open-sessionbar";
 ```
 
 `home.nix`:
@@ -26,10 +29,19 @@ imports = [ open-sessionbar.homeManagerModules.default ];
 programs.open-sessionbar = {
   enable = true;
   package = open-sessionbar.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  # port = 4098;  # OPENCODE_SESSIONBAR_PORT (plugin + consumers)
   # opt-in: also drop + register the OpenCode plugin on activation
   opencodePlugin.enable = true;
 };
 ```
+
+`port` sets `OPENCODE_SESSIONBAR_PORT` for the user session. The plugin reads that
+env as a fallback when `tui.json` does not set `{ "port": N }` in the options
+tuple. Prefer changing only the HM option (or only the tuple) so producer and
+consumer stay aligned.
+
+**Multi-instance:** if several OpenCode windows run, only the **primary** (port
+owner) serves sessions. Followers take over within ~30s if the primary exits.
 
 ### Other Linux / macOS
 

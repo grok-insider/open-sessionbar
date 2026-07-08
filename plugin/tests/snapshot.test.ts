@@ -1,12 +1,13 @@
-// Snapshot tests: precedence, stale filter, sub-session filter, counts.
+// Snapshot tests: precedence, stale filter, sub-session filter, counts, caps.
 import { test, expect } from "bun:test";
 import { buildSnapshot } from "../snapshot.ts";
 
 const makeApi = (
   sessions: unknown[],
-  statusMap: Record<string, { type: string }>,
+  statusMap: Record<string, { type: string }> = {},
   perms: Record<string, unknown[]> = {},
   messages: Record<string, unknown[]> = {},
+  questions: Record<string, unknown[]> = {},
 ) =>
   ({
     client: {
@@ -18,7 +19,7 @@ const makeApi = (
     state: {
       session: {
         permission: (id: string) => perms[id] ?? [],
-        question: () => [],
+        question: (id: string) => questions[id] ?? [],
         todo: () => [],
         messages: (id: string) => messages[id] ?? [],
       },
@@ -85,4 +86,80 @@ test("agent mode from latest assistant message", async () => {
   );
   expect(snap.sessions[0]!.mode).toBe("plan");
   expect(snap.summary.mode).toBe("plan"); // headline (top busy) mode
+});
+
+test("top permission is most recently updated, not list order", async () => {
+  const now = Date.now();
+  const sessions = [
+    { id: "old-perm", title: "Old wait", time: { updated: now - 10_000 } },
+    { id: "new-perm", title: "New wait", time: { updated: now - 100 } },
+  ];
+  const perms = {
+    "old-perm": [{ permission: "bash" }],
+    "new-perm": [{ permission: "webfetch", patterns: ["WebSearch"] }],
+  };
+  const snap = await buildSnapshot(makeApi(sessions, {}, perms));
+  expect(snap.summary.headlineKind).toBe("permission");
+  // Mode / headline should reflect the newer waiter (no mode without messages).
+  expect(snap.sessions[0]!.id).toBe("new-perm"); // active sorted by updated desc
+});
+
+test("question takes precedence over busy", async () => {
+  const now = Date.now();
+  const snap = await buildSnapshot(
+    makeApi(
+      [
+        { id: "b", title: "busy", time: { updated: now } },
+        { id: "q", title: "ask", time: { updated: now - 1 } },
+      ],
+      { b: { type: "busy" } },
+      {},
+      {},
+      { q: [{ id: "q1" }] },
+    ),
+  );
+  expect(snap.summary.headlineKind).toBe("question");
+  expect(snap.summary.headline).toBe("Waiting for your answer");
+  expect(snap.summary.waiting).toBe(1);
+  expect(snap.summary.busy).toBe(1);
+});
+
+test("multi-busy headline counts listed busy sessions", async () => {
+  const now = Date.now();
+  const snap = await buildSnapshot(
+    makeApi(
+      [
+        { id: "a", title: "a", time: { updated: now } },
+        { id: "b", title: "b", time: { updated: now - 1 } },
+      ],
+      { a: { type: "busy" }, b: { type: "busy" } },
+    ),
+  );
+  expect(snap.summary.headlineKind).toBe("busy");
+  expect(snap.summary.headline).toBe("Working · 2 sessions");
+  expect(snap.summary.busy).toBe(2);
+});
+
+test("cap prefers active sessions; summary matches listed set", async () => {
+  const now = Date.now();
+  const sessions = [];
+  for (let i = 0; i < 15; i++) {
+    sessions.push({
+      id: `idle${i}`,
+      title: `Idle ${i}`,
+      time: { updated: now - i * 1000 },
+    });
+  }
+  sessions.push({ id: "busy1", title: "Busy", time: { updated: now + 1 } });
+  const snap = await buildSnapshot(
+    makeApi(sessions, { busy1: { type: "busy" } }),
+  );
+  expect(snap.sessions.length).toBe(12);
+  expect(snap.sessions.some((s) => s.id === "busy1")).toBe(true);
+  expect(snap.summary.total).toBe(12);
+  expect(snap.summary.busy).toBe(1);
+  expect(snap.summary.idle).toBe(11);
+  expect(snap.summary.busy + snap.summary.waiting + snap.summary.idle).toBe(
+    snap.summary.total,
+  );
 });

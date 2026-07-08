@@ -107,9 +107,10 @@ fn parse_anim(args: &[String]) -> Result<Anim, String> {
             "--spinner" => {
                 let v = args
                     .get(i + 1)
-                    .ok_or("--spinner requires braille|shimmer")?;
-                anim.spinner = SpinnerStyle::parse(v)
-                    .ok_or_else(|| format!("unknown --spinner '{v}' (braille|shimmer)"))?;
+                    .ok_or("--spinner requires braille|shimmer|dots|ring|ring-comet")?;
+                anim.spinner = SpinnerStyle::parse(v).ok_or_else(|| {
+                    format!("unknown --spinner '{v}' (braille|shimmer|dots|ring|ring-comet)")
+                })?;
             }
             _ => {}
         }
@@ -134,13 +135,7 @@ fn parse_tick(args: &[String]) -> u64 {
 }
 
 fn parse_port(args: &[String]) -> u16 {
-    if let Ok(env) = std::env::var("OPENCODE_SESSIONBAR_PORT") {
-        if let Ok(p) = env.parse::<u16>() {
-            if p > 0 {
-                return p;
-            }
-        }
-    }
+    // CLI --port overrides env; env overrides the default.
     let mut i = 0;
     while i < args.len() {
         if args[i] == "--port" {
@@ -151,6 +146,13 @@ fn parse_port(args: &[String]) -> u16 {
             }
         }
         i += 1;
+    }
+    if let Ok(env) = std::env::var("OPENCODE_SESSIONBAR_PORT") {
+        if let Ok(p) = env.parse::<u16>() {
+            if p > 0 {
+                return p;
+            }
+        }
     }
     DEFAULT_PORT
 }

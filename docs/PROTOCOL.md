@@ -51,9 +51,13 @@ name) of that session's latest assistant message, read from
 (dark theme: build `#034cff`, plan `#a753ae`). `mode` may be absent if no
 assistant message has run yet.
 
-Headline precedence: `permission > question > busy > idle/done`. Sub-sessions
+Headline precedence: `permission > question > busy > idle/done`. Within each
+waiting kind, the most recently updated session drives the headline. Sub-sessions
 (forked children) are filtered out; stale idle/done sessions (older than 6h) are
-dropped; the list is capped at 12 and sorted by `updated` desc.
+dropped; the list is capped at 12 with **active sessions preferred**, then sorted
+by status priority and `updated` desc. Summary counts (`busy`/`waiting`/`idle`/
+`total`) match the final listed `sessions[]`. `summary.mode` is the agent of the
+session driving the headline (when known).
 
 ### `GET /sessions/stream`
 Server-Sent Events. One frame on connect (priming) and one on every change:

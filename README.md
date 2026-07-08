@@ -130,8 +130,9 @@ the port, the rest stay silent; if the primary exits a follower takes over.
   `opensessions plugin status` (installed / registered / server live). On a brief
   SSE drop the last snapshot is held for a few seconds rather than blanking.
 - **Port already in use** — that's the primary/follower election working; another
-  OpenCode instance owns `:4098`. Override with `--port` /
-  `OPENCODE_SESSIONBAR_PORT` if it collides with something else.
+  OpenCode instance owns `:4098`. Override with `--port` (wins over env) or
+  `OPENCODE_SESSIONBAR_PORT` if it collides with something else; set the same
+  port on the plugin (`tui.json` options tuple or the env fallback).
 - **Remove it** — `opensessions plugin uninstall` (un-registers from `tui.json`
   and deletes the plugin files).
 

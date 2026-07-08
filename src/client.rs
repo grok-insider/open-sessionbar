@@ -7,22 +7,30 @@ use crate::model::Snapshot;
 
 pub struct Client {
     base: String,
+    /// Shared blocking client for short requests (snapshot / health).
+    http: reqwest::blocking::Client,
 }
 
 impl Client {
     pub fn new(port: u16) -> Self {
+        let http = reqwest::blocking::Client::builder()
+            .timeout(Duration::from_millis(1000))
+            .build()
+            // Builder only fails on bad TLS config; fall back to default.
+            .unwrap_or_else(|_| reqwest::blocking::Client::new());
         Client {
             base: format!("http://127.0.0.1:{port}"),
+            http,
         }
     }
 
     /// Fetch one snapshot. Returns None if the plugin isn't reachable.
     pub fn snapshot(&self) -> Option<Snapshot> {
-        let agent = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_millis(1000))
-            .build()
+        let resp = self
+            .http
+            .get(format!("{}/sessions", self.base))
+            .send()
             .ok()?;
-        let resp = agent.get(format!("{}/sessions", self.base)).send().ok()?;
         if !resp.status().is_success() {
             return None;
         }
@@ -31,14 +39,7 @@ impl Client {
 
     /// Liveness probe: true if /health responds with our plugin name.
     pub fn healthy(&self) -> bool {
-        let agent = match reqwest::blocking::Client::builder()
-            .timeout(Duration::from_millis(800))
-            .build()
-        {
-            Ok(a) => a,
-            Err(_) => return false,
-        };
-        let resp = match agent.get(format!("{}/health", self.base)).send() {
+        let resp = match self.http.get(format!("{}/health", self.base)).send() {
             Ok(r) => r,
             Err(_) => return false,
         };
@@ -58,9 +59,10 @@ impl Client {
     where
         F: FnMut(Snapshot) -> bool,
     {
-        // No client timeout: the stream is long-lived (server sends keep-alive
-        // pings). Connect timeout is bounded by the OS.
+        // Dedicated client: long-lived stream (server keep-alive pings) with a
+        // bounded connect timeout so a blackholed port fails into reconnect.
         let agent = reqwest::blocking::Client::builder()
+            .connect_timeout(Duration::from_secs(2))
             .build()
             .map_err(|e| e.to_string())?;
         let resp = agent

@@ -33,10 +33,17 @@ const tui: TuiPlugin = async (api, options) => {
   const opts = (options ?? {}) as Record<string, unknown>;
   if (opts.enabled === false) return;
 
+  // Port precedence: tui.json options tuple → OPENCODE_SESSIONBAR_PORT → 4098.
+  // Matches consumers (CLI --port > env > default) so HM port and bar stay aligned.
+  const envPort = (() => {
+    const raw = (typeof process !== "undefined" && process.env?.OPENCODE_SESSIONBAR_PORT) || "";
+    const n = Number.parseInt(raw, 10);
+    return Number.isInteger(n) && n > 0 ? n : undefined;
+  })();
   const port =
     typeof opts.port === "number" && Number.isInteger(opts.port) && opts.port > 0
       ? opts.port
-      : DEFAULT_PORT;
+      : (envPort ?? DEFAULT_PORT);
 
   let snapshot: SessionSnapshot = EMPTY_SNAPSHOT;
   let server: SessionServer | undefined;

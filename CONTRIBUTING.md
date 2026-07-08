@@ -45,5 +45,14 @@ opensessions plugin install
 
 ## Releases
 
-Tag `vX.Y.Z` on `master`. CI builds via Nix (pushes to `grok-insider.cachix.org`),
-runs `bun test`, and attaches Linux/Windows binaries to the GitHub Release.
+Patch releases are automatic; major/minor are manual (same model as open-recorder):
+
+| Stream | How |
+|--------|-----|
+| **Patch** (`x.y.z → x.y.z+1`) | On push to `master` with `feat`/`fix` commits since the last tag, CI opens a release PR. Merge it to tag + GitHub Release + attach binaries. |
+| **Minor / major** | Actions → **Manual Version Bump** (repo admin only). Opens a release PR for `x.y.0` / `x.0.0`. |
+| **Force patch PR** | Actions → Release → `workflow_dispatch` with `force` (no feat/fix needed). |
+
+`release-plz` only cuts the `vX.Y.Z` tag + GitHub Release (`release_always`).
+Version bumps live in the hand-rolled release PR. Nothing is published to crates.io.
+CI also builds via Nix (cachix `grok-insider`) and runs `bun test`.

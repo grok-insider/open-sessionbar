@@ -105,15 +105,22 @@
           config = lib.mkIf cfg.enable {
             home.packages = [ cfg.package ];
 
-            home.sessionVariables = lib.mkIf (cfg.port != 4098) {
+            # Always export when enabled so consumers and the plugin (env
+            # fallback) share one port. Default 4098 still written so shells
+            # and OpenCode inherit the same value after a port change.
+            home.sessionVariables = {
               OPENCODE_SESSIONBAR_PORT = toString cfg.port;
             };
 
             # Idempotent: `plugin install` is a no-op when already registered.
+            # Failures (e.g. JSONC tui.json) are warned, not silent — so a hand-
+            # managed config that the installer refuses to edit is visible.
             home.activation.openSessionbarPlugin =
               lib.mkIf cfg.opencodePlugin.enable
                 (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                  run ${cfg.package}/bin/opensessions plugin install --global || true
+                  if ! run ${cfg.package}/bin/opensessions plugin install --global; then
+                    echo "open-sessionbar: plugin install failed (JSONC tui.json? run: opensessions plugin status)" >&2
+                  fi
                 '');
           };
         };
