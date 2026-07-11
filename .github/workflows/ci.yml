@@ -1,21 +1,27 @@
 name: CI
 
+# Status checks (fmt/clippy/test, plugin) run on pull requests only — not on bare
+# pushes to master/dev. Nix/cachix runs only after a PR into master is merged
+# (or on v* tags / manual dispatch).
+
 on:
-  push:
-    branches: [master]
-    tags: ["v*"]
   pull_request:
+    types: [opened, synchronize, reopened, closed]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:
-  # Fast, required gate: formatting, lints, and the Rust integration tests.
-  # Runs on every PR; the master-only nix/cachix build below is skipped on PRs.
   rust:
     name: fmt + clippy + test
+    if: >
+      github.event_name == 'workflow_dispatch'
+      || github.event_name == 'push'
+      || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,8 +33,29 @@ jobs:
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test --all
 
+  plugin:
+    name: plugin (bun test)
+    if: >
+      github.event_name == 'workflow_dispatch'
+      || github.event_name == 'push'
+      || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Bun tests
+        working-directory: plugin
+        run: bun test
+
   build:
     name: build (${{ matrix.system }})
+    if: >
+      github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+      || (github.event_name == 'pull_request'
+          && github.event.action == 'closed'
+          && github.event.pull_request.merged == true
+          && github.event.pull_request.base.ref == 'master')
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -39,7 +66,9 @@ jobs:
           - runner: ubuntu-24.04-arm
             system: aarch64-linux
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -48,9 +77,6 @@ jobs:
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      # Configures the grok-insider cache as a substituter AND pushes every newly
-      # built store path to it (using the CACHIX_AUTH_TOKEN secret). nix-community
-      # is pulled so build dependencies come from cache where possible.
       - name: Set up Cachix
         uses: cachix/cachix-action@v17
         with:
@@ -63,16 +89,3 @@ jobs:
 
       - name: Flake check
         run: nix flake check -L
-
-  plugin:
-    name: plugin (bun test)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-      - name: Bun tests
-        working-directory: plugin
-        run: bun test
-
-  # Release binaries are built and attached by release.yml (release-plz-driven),
-  # not here.
