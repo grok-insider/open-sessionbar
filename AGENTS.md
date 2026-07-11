@@ -84,3 +84,15 @@ binaries (Linux/Windows) on `v*` tags. Published as `github:grok-insider/open-se
 ## CONTRIBUTING
 
 See `CONTRIBUTING.md`.
+
+## GitHub / branch policy
+
+- **Remote:** `github.com/grok-insider/open-sessionbar` (public)
+- **Model: A (integration)** — human feature/fix/docs PRs target **`dev`**, not `master`.
+- **`master`:** released line. Protected; required checks include CI + **`only dev into master`** (after this change lands and protection is updated).
+- **`dev`:** integration branch. Land work here first.
+- **Guard:** `.github/workflows/guard-master.yml` allowlists `dev` and release-bot heads
+  (`release-plz-*`, `release-plz-manual-*`, `release-please--*`, `release-please-manual-*`).
+- **Flow:** `feat/*` → PR into `dev` → batch via `dev`→`master` PR → release-plz Release PR on `master`.
+- Org QC: `~/dev/opensource/docs/comparison.md`.
+

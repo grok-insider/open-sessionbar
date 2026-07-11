@@ -56,3 +56,9 @@ Patch releases are automatic; major/minor are manual (same model as open-recorde
 `release-plz` only cuts the `vX.Y.Z` tag + GitHub Release (`release_always`).
 Version bumps live in the hand-rolled release PR. Nothing is published to crates.io.
 CI also builds via Nix (cachix `grok-insider`) and runs `bun test`.
+
+## Branch model (Model A)
+
+- Open feature/fix PRs against **`dev`**, not `master`.
+- When a batch is ready, open a single **`dev` → `master`** integration PR.
+- Release-plz opens Release PRs into `master` from `release-plz-*` branches (allowed by guard).
