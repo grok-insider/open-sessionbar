@@ -1,6 +1,6 @@
 [package]
 name = "open-sessionbar"
-version = "0.2.1"
+version = "0.0.1"
 description = "Desktop-agnostic OpenCode session monitor: status-bar module (waybar/i3blocks/polybar/eww) + live TUI, fed by an embedded OpenCode plugin"
 edition = "2021"
 license = "MIT"
